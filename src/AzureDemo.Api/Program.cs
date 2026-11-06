@@ -1,6 +1,8 @@
+using Azure.Identity;
+
+
 var builder = WebApplication.CreateBuilder(args);
 
-using Azure.Identity;
 
 var kvUri = builder.Configuration["KeyVaultUri"];
 if (!string.IsNullOrEmpty(kvUri))
