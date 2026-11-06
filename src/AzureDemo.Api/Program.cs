@@ -35,6 +35,7 @@ app.MapGet("/weatherforecast", () =>
 
 app.MapGet("/health", () => Results.Ok(new {
     status = "ok",
+    version = "v2",
     env = app.Environment.EnvironmentName,
     time = DateTime.UtcNow
 }));
