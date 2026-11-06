@@ -1,5 +1,16 @@
 var builder = WebApplication.CreateBuilder(args);
 
+using Azure.Identity;
+
+var kvUri = builder.Configuration["KeyVaultUri"];
+if (!string.IsNullOrEmpty(kvUri))
+{
+    builder.Configuration.AddAzureKeyVault(
+        new Uri(kvUri), new DefaultAzureCredential());
+}
+
+
+
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -39,6 +50,16 @@ app.MapGet("/health", () => Results.Ok(new {
     env = app.Environment.EnvironmentName,
     time = DateTime.UtcNow
 }));
+
+app.MapGet("/secret", (IConfiguration config) =>
+{
+    var value = config["DemoSecret"];
+    return Results.Ok(new {
+        found = value is not null,
+        preview = value is null ? null : value[..5] + "***"
+    });
+});
+
 
 app.Run();
 
