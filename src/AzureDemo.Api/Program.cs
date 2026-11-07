@@ -32,7 +32,18 @@ var service = new BlobServiceClient(new Uri(url), credential);
     return service.GetBlobContainerClient("photos");
 });
 
+builder.Services.AddCors(o => o.AddPolicy("web", p => p
+    .WithOrigins("https://azure-demo-carles-cje8h3htg7a8eybd.westus3-01.azurewebsites.net")
+    .AllowAnyHeader()
+    .AllowAnyMethod()));
+
+
+
 var app = builder.Build();
+
+
+app.UseCors("web");
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
