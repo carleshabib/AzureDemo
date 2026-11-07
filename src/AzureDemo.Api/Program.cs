@@ -1,6 +1,9 @@
+using Azure.Core;
 using Azure.Identity;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Microsoft.Data.SqlClient;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -112,6 +115,23 @@ app.MapDelete("/photos/{name}", async (string name, BlobContainerClient containe
     return deleted.Value ? Results.NoContent() : Results.NotFound();
 });
 
+//sql connection test
+app.MapGet("/db-test", async (IConfiguration config) =>
+{
+    await using var conn = new SqlConnection(config["SqlConnection"]);
+var token = await credential.GetTokenAsync(
+    new TokenRequestContext(new[] { "https://database.windows.net/.default" }), default);
+conn.AccessToken = token.Token;
+await conn.OpenAsync();
+    var cmd = new SqlCommand("SELECT Id, BlobName, Title, UploadedAt FROM Photos", conn);
+    var rows = new List<object>();
+    await using var reader = await cmd.ExecuteReaderAsync();
+    while (await reader.ReadAsync())
+        rows.Add(new { id = reader.GetInt32(0), blob = reader.GetString(1),
+                       title = reader.IsDBNull(2) ? null : reader.GetString(2),
+                       uploaded = reader.GetDateTime(3) });
+    return Results.Ok(rows);
+});
 
 app.Run();
 
