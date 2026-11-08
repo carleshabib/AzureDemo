@@ -153,8 +153,10 @@ app.MapGet("/photos/upload-url", async (string fileName, BlobContainerClient con
     var start = DateTimeOffset.UtcNow.AddMinutes(-5);
     var expiry = DateTimeOffset.UtcNow.AddMinutes(10);
 
-    var key = await service.GetUserDelegationKeyAsync(start, expiry);
-
+    var key = await service.GetUserDelegationKeyAsync(
+        new BlobGetUserDelegationKeyOptions(expiry) { StartsOn = start });
+    
+    
     var sas = new BlobSasBuilder
     {
         BlobContainerName = container.Name,
