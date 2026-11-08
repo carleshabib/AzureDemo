@@ -3,6 +3,8 @@ using Azure.Identity;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.Data.SqlClient;
+using Azure.Storage.Blobs.Specialized;
+using Azure.Storage.Sas;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -143,6 +145,36 @@ await conn.OpenAsync();
                        uploaded = reader.GetDateTime(3) });
     return Results.Ok(rows);
 });
+
+app.MapGet("/photos/upload-url", async (string fileName, BlobContainerClient container) =>
+{
+    var name = $"{Guid.NewGuid()}{Path.GetExtension(fileName)}";
+    var service = container.GetParentBlobServiceClient();
+    var start = DateTimeOffset.UtcNow.AddMinutes(-5);
+    var expiry = DateTimeOffset.UtcNow.AddMinutes(10);
+
+    var key = await service.GetUserDelegationKeyAsync(start, expiry);
+
+    var sas = new BlobSasBuilder
+    {
+        BlobContainerName = container.Name,
+        BlobName = name,
+        Resource = "b",
+        StartsOn = start,
+        ExpiresOn = expiry
+    };
+    sas.SetPermissions(BlobSasPermissions.Create | BlobSasPermissions.Write);
+
+    var uri = new BlobUriBuilder(container.GetBlobClient(name).Uri)
+    {
+        Sas = sas.ToSasQueryParameters(key.Value, service.AccountName)
+    }.ToUri();
+
+    return Results.Ok(new { name, uploadUrl = uri.ToString() });
+});
+
+
+
 
 app.Run();
 

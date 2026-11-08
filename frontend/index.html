@@ -15,6 +15,7 @@
   <h1>Photo Gallery 📸</h1>
   <input type="file" id="file" accept="image/*">
   <button onclick="upload()">Upload</button>
+  <button onclick="uploadDirect()">Direct Upload to blob storage⚡ </button>
   <div class="grid" id="grid"></div>
 
   <script>
@@ -45,6 +46,25 @@
     }
 
     load();
+
+    async function uploadDirect() {
+  const file = document.getElementById("file").files[0];
+  if (!file) return alert("اختر صورة");
+
+  // 1) اطلب رابط الرفع من الـ API
+  const res = await fetch(`${API}/photos/upload-url?fileName=${encodeURIComponent(file.name)}`);
+  const { uploadUrl } = await res.json();
+
+  // 2) ارفع الملف مباشرة للـ Blob
+  await fetch(uploadUrl, {
+    method: "PUT",
+    headers: { "x-ms-blob-type": "BlockBlob", "Content-Type": file.type },
+    body: file
+  });
+
+  load();
+}
+
   </script>
 </body>
 </html>
